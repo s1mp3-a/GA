@@ -40,9 +40,11 @@ namespace GA
             {
                 foreach (var member in _population)
                 {
-                    if(member.Score(_fitness) < best.Score(_fitness))
+                    double memberScore = member.Score(_fitness);
+                    double bestScore = best.Score(_fitness);
+                    if(memberScore < bestScore)
                     {
-                        best = member;
+                        best = member.Clone() as Individual;
                     }
                 }
 

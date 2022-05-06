@@ -7,8 +7,12 @@ namespace GA
     {
         static void Main(string[] args)
         {
-            var algo = new GeneticAlgorithm(Function, 0.2, 0.01);
-            algo.Run(100);
+            GeneticAlgorithm algo;
+            do
+            {
+                algo = new GeneticAlgorithm(Function, 0.2, 0.01);
+                algo.Run(100);
+            } while (!Double.IsNaN(algo.BestFit));
         }
 
         static double Function(Floating[] fs)

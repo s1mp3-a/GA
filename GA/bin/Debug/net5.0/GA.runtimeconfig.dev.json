@@ -1,0 +1,8 @@
+{
+  "runtimeOptions": {
+    "additionalProbingPaths": [
+      "C:\\Users\\Quizzy\\.dotnet\\store\\|arch|\\|tfm|",
+      "C:\\Users\\Quizzy\\.nuget\\packages"
+    ]
+  }
+}

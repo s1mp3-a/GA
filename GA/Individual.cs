@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Text;
 
-public class Individual
+public class Individual : ICloneable
 {
     public Floating[] Values { get; set; }
 
@@ -78,7 +78,12 @@ public class Individual
         var newValues = new double[this.Values.Length];
         for (int i = 0; i < this.Values.Length; i++)
         {
-            var bitString = new string(bitSpan.Slice(start, charCount));
+            var modifiedSpan = bitSpan.Slice(start, charCount);
+            modifiedSpan[2] = '0';
+            modifiedSpan[3] = '0';
+            modifiedSpan[4] = '0';
+            modifiedSpan[5] = '0';
+            var bitString = new string(modifiedSpan);
             var doubleValue = BinaryConverter.RawBinaryToDouble(bitString);
             newValues[i] = doubleValue;
             start += charCount;
@@ -90,5 +95,10 @@ public class Individual
     public double Score(Func<Floating[], double> fit)
     {
         return fit(Values);
+    }
+
+    public object Clone()
+    {
+        return this.MemberwiseClone();
     }
 }
