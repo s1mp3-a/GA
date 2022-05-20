@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace GA
@@ -6,12 +7,25 @@ namespace GA
     public struct Floating
     {
         public string Sign { get; set; }
+        public string ExpSign { get; set; }
         public string Exponent { get; set; }
         public string Mantissa { get; set; }
 
-        public string BitRep => Sign + Exponent + Mantissa;
-        public double Value => BinaryConverter.RawBinaryToDouble(BitRep);
+        public string BitRep => Sign + ExpSign + Mantissa + Exponent;
+        public double Value 
+        { 
+            get 
+            {
+                double mantissaDec = Convert.ToInt32(Mantissa, 2);
+                mantissaDec /= Math.Pow(10, mantissaDec.ToString().Length - 1);
+                var exponentDec = Convert.ToInt32(Exponent, 2);
+                var value = mantissaDec * Math.Pow(10, ExpSign == "0" ? exponentDec : -exponentDec);
+
+                return Sign == "0" ? value : -value ;
+            } 
+        }
     }
+
 
     public struct Fraction
     {
@@ -22,21 +36,88 @@ namespace GA
 
     public static class BinaryConverter
     {
+        public const int MantissaSize = 16;
+        public const int ExponentSize = 4;
+        public const int DecFracSize = 3;
+
+        /// <summary>
+        /// Converts decimal value to Floating structure
+        /// </summary>
+        /// <param name="value">Decimal value</param>
+        /// <returns>Floating structure</returns>
         public static Floating DecimalToBinaryFloating(double value)
         {
-            var raw = BitConverter.DoubleToInt64Bits(value);
-            var sign = raw >> 63 & 0x01;
-            var exponent = raw >> 52 & 0x7FF;
-            var mantissa = (raw & 0xFFFFFFFFFFFFF);
+            int sign = value > 0 ? 0 : 1;
+            double mantissa = value = Math.Abs(value);
+            int exponent = 0;
+
+            //Value must be finite
+            if (!double.IsFinite(value))
+            {
+                throw new ArgumentException();
+            }
+
+            if(value == 0)
+            {
+                return new Floating
+                {
+                    Mantissa = "0".PadLeft(MantissaSize, '0'),
+                    Exponent = "0".PadLeft(ExponentSize, '0'),
+                    Sign = "0",
+                    ExpSign = "0"
+                };
+            }
+
+            //Mantissa and exponent formation
+            //Branching affects the sign of the exponent
+            if (value >= 1)
+            {
+                while(true)
+                {
+                    value /= 10;
+                    if (value < 1)
+                        break;
+                    mantissa = value;
+                    exponent++;
+                }
+            }
+            else
+            {
+                while (true)
+                {
+                    value *= 10;
+                    if (value > 10)
+                        break;
+                    mantissa = value;
+                    exponent--;
+                }
+            }
+
+            mantissa = Math.Round(mantissa, DecFracSize);
+
+            var mantStr = mantissa.ToString().Replace(",","");
+            mantStr = Convert.ToString(Convert.ToInt32(mantStr), 2);
+            mantStr = mantStr.PadLeft(MantissaSize, '0').Substring(0,MantissaSize);
+
+            var expStr = Convert.ToString(Math.Abs(exponent), 2);
+            expStr = expStr.PadLeft(ExponentSize, '0').Substring(0,ExponentSize);
 
             return new Floating
             {
-                Sign = Convert.ToString(sign, 2),
-                Exponent = Convert.ToString(exponent, 2).PadLeft(11, '0'),
-                Mantissa = Convert.ToString(mantissa, 2).PadLeft(52, '0')
+                Sign = sign.ToString(),
+                Mantissa = mantStr,
+                Exponent = expStr,
+                ExpSign = exponent >= 0 ? "0" : "1"
             };
         }
 
+
+        /// <summary>
+        /// Converts decimal value to Fraction structure with certain accuracy
+        /// </summary>
+        /// <param name="value">Decimal value</param>
+        /// <param name="acc">Accuracy</param>
+        /// <returns>Fraction structure</returns>
         public static Fraction DecimalToBinaryFraction(double value, int acc)
         {
             var intPart = (int)Math.Truncate(value);
@@ -73,18 +154,34 @@ namespace GA
             };
         }
 
-        public static double BinaryToDouble(Floating value)
-        {
-            var raw = value.Sign + value.Exponent + value.Mantissa;
-
-            return BitConverter.Int64BitsToDouble(Convert.ToInt64(raw, 2));
-        }
-        
+        /// <summary>
+        /// Converts bit string to double value
+        /// </summary>
+        /// <param name="bit">Bit string</param>
+        /// <returns>Double</returns>
         public static double RawBinaryToDouble(string bits)
         {
-            return BitConverter.Int64BitsToDouble(Convert.ToInt64(bits, 2));
+            var value = new Floating
+            {
+                Sign = $"{bits[0]}",
+                ExpSign = $"{bits[1]}",
+                Mantissa = bits.Substring(2, MantissaSize),
+                Exponent = bits.Substring(MantissaSize + 2, ExponentSize)
+            };
+
+            if(double.IsInfinity(value.Value))
+            {
+                Console.Write("");
+            }
+
+            return value.Value;
         }
 
+        /// <summary>
+        /// Converts Fraction structure to double value
+        /// </summary>
+        /// <param name="value">Fraction structure</param>
+        /// <returns>Double</returns>
         public static double BinaryToDouble(Fraction value)
         {
             double intPart = 0;

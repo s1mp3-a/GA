@@ -12,43 +12,123 @@ public class Individual : ICloneable
         Values = values.Select(v => BinaryConverter.DecimalToBinaryFloating(v)).ToArray();
     }
 
+    /// <summary>
+    /// Crossing of two individuals
+    /// </summary>
+    /// <param name="i2">Another individual</param>
+    /// <returns>New child individual</returns>
     public Individual CrossOver(Individual i2, Random random)
     {
-        StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
-        
-        foreach (var value in Values)
-            sb.Append(value.BitRep);
-        var parent1 = sb.ToString().ToCharArray();
-        sb.Clear();
-        
-        foreach (var value in i2.Values)
-            sb.Append(value.BitRep);
-        var parent2 = sb.ToString().ToCharArray();
-
-        var slice = random.Next(1, parent1.Length - 2);
-        
-        var part1 = parent1[..slice];
-        var part2 = parent2[slice..];
-
-        Span<char> childSpan = stackalloc char[part1.Length + part2.Length];
-        var preSlice = childSpan[..slice];
-        var postSlice = childSpan[slice..];
-        
-        part1.CopyTo(preSlice);
-        part2.CopyTo(postSlice);
-
-        var charCount = Values[0].BitRep.Length;
-        int start = 0;
-        var childValues = new double[this.Values.Length];
-        for (int i = 0; i < i2.Values.Length; i++)
+        var methods = new Func<Individual, Random, Individual>[]
         {
-            var bitString = new string(childSpan.Slice(start, charCount));
-            var doubleValue = BinaryConverter.RawBinaryToDouble(bitString);
-            childValues[i] = doubleValue;
-            start += charCount;
+            CrossOverComponent,
+            CrossOverFullString,
+            CrossOverSteps
+        };
+
+        var index = random.Next(0, 3);
+
+        return methods[index](i2, random);
+    }
+
+    /// <summary>
+    /// Crossing component by component
+    /// </summary>
+    /// <param name="i2">Another individual</param>
+    /// <returns>New child individual</returns>
+    public Individual CrossOverComponent(Individual i2, Random random)
+    {
+        StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
+
+        string[] bitValues = new string[Values.Length];
+
+        for(int i = 0; i < Values.Length; i++)
+        {
+            var slice = random.Next(1, Values[i].BitRep.Length);
+            sb.Append(Values[i].BitRep.Substring(0, slice));
+            sb.Append(i2.Values[i].BitRep.Substring(slice));
+            bitValues[i] = sb.ToString();
+            sb.Clear();
         }
 
-        return new Individual(childValues);
+        return new Individual(bitValues.Select(x => BinaryConverter.RawBinaryToDouble(x)).ToArray());
+    }
+
+    /// <summary>
+    /// Crossing bitrep by bitrep
+    /// </summary>
+    /// <param name="i2">Another individual</param>
+    /// <returns>New child individual</returns>
+    public Individual CrossOverFullString(Individual i2, Random random)
+    {
+        StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
+
+        string[] bitValues = new string[Values.Length];
+
+        foreach(var value in Values)
+        {
+            sb.Append(value.BitRep);
+        }
+
+        bitValues[0] = sb.ToString();
+        sb.Clear();
+
+        foreach (var value in i2.Values)
+        {
+            sb.Append(value.BitRep);
+        }
+
+        bitValues[1] = sb.ToString();
+        
+        var slice = random.Next(1, Values[0].BitRep.Length * 2);
+
+        sb.Clear();
+        sb.Append(bitValues[0].Substring(0, slice));
+        sb.Append(bitValues[1].Substring(slice));
+
+        return new Individual(bitValues.Select(x => BinaryConverter.RawBinaryToDouble(x)).ToArray());
+    }
+
+    /// <summary>
+    /// Diagonal steps crossing
+    /// </summary>
+    /// <param name="i2">Another individual</param>
+    /// <returns>New child individual</returns>
+    public Individual CrossOverSteps(Individual i2, Random random)
+    {
+        StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
+
+        string[] bitValues = new string[Values.Length];
+
+        foreach (var value in Values)
+        {
+            sb.Append(value.BitRep);
+        }
+
+        bitValues[0] = sb.ToString();
+        sb.Clear();
+
+        foreach (var value in i2.Values)
+        {
+            sb.Append(value.BitRep);
+        }
+
+        bitValues[1] = sb.ToString();
+        sb.Clear();
+
+        for(int i = 0; i < bitValues[0].Length; i++)
+        {
+            sb.Append(bitValues[i % 2][i]);
+        }
+
+        var resBits = sb.ToString();
+
+        return new Individual(new double[]
+        {
+            BinaryConverter.RawBinaryToDouble(resBits.Substring(0,resBits.Length / 2)),
+            BinaryConverter.RawBinaryToDouble(resBits.Substring(resBits.Length / 2))
+        });
+
     }
 
     public void Mutate(double prob, Random random)
@@ -79,10 +159,6 @@ public class Individual : ICloneable
         for (int i = 0; i < this.Values.Length; i++)
         {
             var modifiedSpan = bitSpan.Slice(start, charCount);
-            modifiedSpan[2] = '0';
-            modifiedSpan[3] = '0';
-            modifiedSpan[4] = '0';
-            modifiedSpan[5] = '0';
             var bitString = new string(modifiedSpan);
             var doubleValue = BinaryConverter.RawBinaryToDouble(bitString);
             newValues[i] = doubleValue;

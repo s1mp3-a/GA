@@ -32,6 +32,10 @@ namespace GA
             _mutationProbability = mutProb;
         }
 
+        /// <summary>
+        /// Launch of the genetic algorithm
+        /// </summary>
+        /// <param name="numberOfGenerations">Number of generations</param>
         public void Run(int numberOfGenerations)
         {
             var best = _population[0];
@@ -72,6 +76,9 @@ namespace GA
             Best = best;
         }
 
+        /// <summary>
+        /// Crossing of two individuals
+        /// </summary>
         private (Individual c1, Individual c2) CrossOver(Individual p1, Individual p2)
         {
             var c1 = p1;
@@ -86,6 +93,9 @@ namespace GA
             return (c1, c2);
         }
 
+        /// <summary>
+        /// Selection of the best
+        /// </summary>
         private Individual Tournament(Individual individual, int tournamentSize)
         {
             var selectionIdx = _random.Next(_population.Size);

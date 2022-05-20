@@ -8,16 +8,13 @@ namespace GA
         static void Main(string[] args)
         {
             GeneticAlgorithm algo;
-            do
-            {
-                algo = new GeneticAlgorithm(Function, 0.2, 0.01);
-                algo.Run(100);
-            } while (!Double.IsNaN(algo.BestFit));
+            algo = new GeneticAlgorithm(Function, 0.2, 0.01);
+            algo.Run(100);
         }
 
         static double Function(Floating[] fs)
         {
-            var xs = fs.Select(f => BinaryConverter.BinaryToDouble(f)).ToArray();
+            var xs = fs.Select(f => f.Value).ToArray();
 
             return Math.Cos(xs[0] * xs[1]);
         }
