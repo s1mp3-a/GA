@@ -33,9 +33,9 @@ namespace GA
         }
 
         /// <summary>
-        /// Launch of the genetic algorithm
+        /// Запуск генетического алгоритма
         /// </summary>
-        /// <param name="numberOfGenerations">Number of generations</param>
+        /// <param name="numberOfGenerations">Количество поколений</param>
         public void Run(int numberOfGenerations)
         {
             var best = _population[0];
@@ -77,7 +77,7 @@ namespace GA
         }
 
         /// <summary>
-        /// Crossing of two individuals
+        /// Скрещивание особей со случайной вероятностью
         /// </summary>
         private (Individual c1, Individual c2) CrossOver(Individual p1, Individual p2)
         {
@@ -94,7 +94,7 @@ namespace GA
         }
 
         /// <summary>
-        /// Selection of the best
+        /// Отбор лучшей особи
         /// </summary>
         private Individual Tournament(Individual individual, int tournamentSize)
         {

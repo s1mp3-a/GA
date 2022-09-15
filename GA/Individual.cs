@@ -13,10 +13,10 @@ public class Individual : ICloneable
     }
 
     /// <summary>
-    /// Crossing of two individuals
+    /// Скрещивание особей со случайным выбором алгоритма
     /// </summary>
-    /// <param name="i2">Another individual</param>
-    /// <returns>New child individual</returns>
+    /// <param name="i2">Другая особь</param>
+    /// <returns>Новая особь</returns>
     public Individual CrossOver(Individual i2, Random random)
     {
         var methods = new Func<Individual, Random, Individual>[]
@@ -32,10 +32,10 @@ public class Individual : ICloneable
     }
 
     /// <summary>
-    /// Crossing component by component
+    /// Покомпонентное скрещивание
     /// </summary>
-    /// <param name="i2">Another individual</param>
-    /// <returns>New child individual</returns>
+    /// <param name="i2">Другая особь</param>
+    /// <returns>Новая особь</returns>
     public Individual CrossOverComponent(Individual i2, Random random)
     {
         StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
@@ -55,10 +55,10 @@ public class Individual : ICloneable
     }
 
     /// <summary>
-    /// Crossing bitrep by bitrep
+    /// Скрещивание по битовой строке
     /// </summary>
-    /// <param name="i2">Another individual</param>
-    /// <returns>New child individual</returns>
+    /// <param name="i2">Другая особь</param>
+    /// <returns>Новая особь</returns>
     public Individual CrossOverFullString(Individual i2, Random random)
     {
         StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
@@ -90,10 +90,10 @@ public class Individual : ICloneable
     }
 
     /// <summary>
-    /// Diagonal steps crossing
+    /// Диагональное скрещивание
     /// </summary>
-    /// <param name="i2">Another individual</param>
-    /// <returns>New child individual</returns>
+    /// <param name="i2">Другая особь</param>
+    /// <returns>Новая особь</returns>
     public Individual CrossOverSteps(Individual i2, Random random)
     {
         StringBuilder sb = new StringBuilder(Values[0].BitRep.Length * Values.Length);
@@ -131,6 +131,10 @@ public class Individual : ICloneable
 
     }
 
+    /// <summary>
+    /// Мутация
+    /// </summary>
+    /// <param name="prob">Порог для мутации</param>
     public void Mutate(double prob, Random random)
     {
         StringBuilder sb = new StringBuilder();
@@ -168,6 +172,11 @@ public class Individual : ICloneable
         this.Values = new Individual(newValues).Values;
     }
 
+    /// <summary>
+    /// Оценка особи
+    /// </summary>
+    /// <param name="fit"></param>
+    /// <returns></returns>
     public double Score(Func<Floating[], double> fit)
     {
         return fit(Values);

@@ -9,6 +9,12 @@ namespace GA
             public const int RESOLUTION = 9;
         }
 
+        /// <summary>
+        /// Создание популяции с заданными границами
+        /// </summary>
+        /// <param name="count">Количество особей</param>
+        /// <param name="bounds">Границы</param>
+        /// <returns></returns>
         public static Population Create(int count, double[] bounds)
         {
             var individuals = new Individual[count];
@@ -43,6 +49,9 @@ namespace GA
             return p;
         }
 
+        /// <summary>
+        /// Распределение
+        /// </summary>
         private static double Map(double value, double fromLow, double fromHigh, double toLow, double toHigh)
         {
             return toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow);
