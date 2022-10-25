@@ -41,17 +41,17 @@ namespace GA
         public const int DecFracSize = 3;
 
         /// <summary>
-        /// Converts decimal value to Floating structure
+        /// Конвертирует значение типа decimal в структуру числа с плавающей точкой
         /// </summary>
-        /// <param name="value">Decimal value</param>
-        /// <returns>Floating structure</returns>
+        /// <param name="value">Конвертируемое значение</param>
+        /// <returns>Структура числа с плавающей точкой</returns>
         public static Floating DecimalToBinaryFloating(double value)
         {
             int sign = value > 0 ? 0 : 1;
             double mantissa = value = Math.Abs(value);
             int exponent = 0;
 
-            //Value must be finite
+            //Значение должно быть конечно
             if (!double.IsFinite(value))
             {
                 throw new ArgumentException();
@@ -68,8 +68,8 @@ namespace GA
                 };
             }
 
-            //Mantissa and exponent formation
-            //Branching affects the sign of the exponent
+            //Формирование мантиссы и экспоненты
+            //Ветвление влияет на знак экспоненты
             if (value >= 1)
             {
                 while(true)
@@ -113,11 +113,11 @@ namespace GA
 
 
         /// <summary>
-        /// Converts decimal value to Fraction structure with certain accuracy
+        /// Преобразует десятичное значение в структуру дробного числа с определенной точностью
         /// </summary>
-        /// <param name="value">Decimal value</param>
-        /// <param name="acc">Accuracy</param>
-        /// <returns>Fraction structure</returns>
+        /// <param name="value">Конвертируемое значение</param>
+        /// <param name="acc">Точность</param>
+        /// <returns>Структура дробного числа</returns>
         public static Fraction DecimalToBinaryFraction(double value, int acc)
         {
             var intPart = (int)Math.Truncate(value);
@@ -155,10 +155,10 @@ namespace GA
         }
 
         /// <summary>
-        /// Converts bit string to double value
+        /// Преобразует битовую строку в значение типа double
         /// </summary>
-        /// <param name="bit">Bit string</param>
-        /// <returns>Double</returns>
+        /// <param name="bits">Битовая строка</param>
+        /// <returns>Значение типа double</returns>
         public static double RawBinaryToDouble(string bits)
         {
             var value = new Floating
@@ -178,10 +178,10 @@ namespace GA
         }
 
         /// <summary>
-        /// Converts Fraction structure to double value
+        /// Преобразует структуру дробного числа в значение типа double
         /// </summary>
-        /// <param name="value">Fraction structure</param>
-        /// <returns>Double</returns>
+        /// <param name="value">Структура дробного числа</param>
+        /// <returns>Значение типа double</returns>
         public static double BinaryToDouble(Fraction value)
         {
             double intPart = 0;

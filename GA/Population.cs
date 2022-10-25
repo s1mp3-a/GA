@@ -18,6 +18,10 @@ namespace GA
             Individuals = individuals;
         }
 
+        /// <summary>
+        /// Обновление популяции
+        /// </summary>
+        /// <param name="newIndividuals">Новые особи</param>
         public void UpdatePopulation(IEnumerable<Individual> newIndividuals)
         {
             Individuals = newIndividuals.ToArray();

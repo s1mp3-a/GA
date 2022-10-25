@@ -26,16 +26,16 @@ namespace GA
 
         public GeneticAlgorithm(Func<Floating[], double> fitnessFunction, double crossProb, double mutProb)
         {
-            _population = PopulationFabric.Create(100, new[] {-1.3d, 1.3d});
+            _population = PopulationFabric.Create(100, new[] {-1.3d, 1.3d, 1.3d, 1.3d, 1.3d, 1.3d, 1.3d });
             _fitness = fitnessFunction;
             _crossoverProbability = crossProb;
             _mutationProbability = mutProb;
         }
 
         /// <summary>
-        /// Launch of the genetic algorithm
+        /// Запуск генетического алгоритма
         /// </summary>
-        /// <param name="numberOfGenerations">Number of generations</param>
+        /// <param name="numberOfGenerations">Количество поколений</param>
         public void Run(int numberOfGenerations)
         {
             var best = _population[0];
@@ -77,7 +77,7 @@ namespace GA
         }
 
         /// <summary>
-        /// Crossing of two individuals
+        /// Скрещивание особей со случайной вероятностью
         /// </summary>
         private (Individual c1, Individual c2) CrossOver(Individual p1, Individual p2)
         {
@@ -94,7 +94,7 @@ namespace GA
         }
 
         /// <summary>
-        /// Selection of the best
+        /// Отбор лучшей особи
         /// </summary>
         private Individual Tournament(Individual individual, int tournamentSize)
         {
