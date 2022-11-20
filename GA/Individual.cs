@@ -1,5 +1,6 @@
 ﻿using GA;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -9,7 +10,7 @@ public class Individual : ICloneable
 
     public Individual(params double[] values)
     {
-        Values = values.Select(v => BinaryConverter.DecimalToBinaryFloating(v)).ToArray();
+        Values = values.Select(x => (Floating)x).ToArray();
     }
 
     /// <summary>
@@ -51,7 +52,7 @@ public class Individual : ICloneable
             sb.Clear();
         }
 
-        return new Individual(bitValues.Select(x => BinaryConverter.RawBinaryToDouble(x)).ToArray());
+        return new Individual(bitValues.Select(x => BinaryConverter.BinaryRowToDouble(x)).ToArray());
     }
 
     /// <summary>
@@ -92,7 +93,7 @@ public class Individual : ICloneable
             bitValues[i] = resultRaw.Substring(i * step, step);
         }
 
-        return new Individual(bitValues.Select(x => BinaryConverter.RawBinaryToDouble(x)).ToArray());
+        return new Individual(bitValues.Select(x => BinaryConverter.BinaryRowToDouble(x)).ToArray());
     }
 
     /// <summary>
@@ -122,7 +123,7 @@ public class Individual : ICloneable
         }
 
         return new Individual(resultValues
-            .Select(x => BinaryConverter.RawBinaryToDouble(x.ToString()))
+            .Select(x => BinaryConverter.BinaryRowToDouble(x.ToString()))
             .ToArray());
     }
 
@@ -159,7 +160,7 @@ public class Individual : ICloneable
         {
             var modifiedSpan = bitSpan.Slice(start, charCount);
             var bitString = new string(modifiedSpan);
-            var doubleValue = BinaryConverter.RawBinaryToDouble(bitString);
+            var doubleValue = BinaryConverter.BinaryRowToDouble(bitString);
             newValues[i] = doubleValue;
             start += charCount;
         }

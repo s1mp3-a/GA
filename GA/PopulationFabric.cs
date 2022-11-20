@@ -53,7 +53,7 @@ namespace GA
 
                 for(int i = 0; i < bounds.Length; i++)
                 {
-                    values[i] = rnd.NextDouble() * 20;
+                    values[i] = rnd.NextDouble() * 3;
                 }
                 individuals[k] = new Individual(values);
             }

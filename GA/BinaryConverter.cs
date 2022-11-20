@@ -1,213 +1,171 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace GA
 {
+    /// <summary>
+    /// Общие настройки для структуры числа с фиксированной точкой в двоичном виде
+    /// </summary>
+    public static class FloatingSettings
+    {
+        public static int IntPartSize { get; set; }
+        public static int FracPartSize { get; set; }
+        public static bool IsUnsigned { get; set; }
+    }
+
+    /// <summary>
+    /// Структура числа с плавающей точкой в двоичном виде
+    /// </summary>
     public struct Floating
     {
-        public string Sign { get; set; }
-        public string ExpSign { get; set; }
-        public string Exponent { get; set; }
-        public string Mantissa { get; set; }
+        public int IntPartSize { get; }
+        public int FracPartSize { get; }
+        public bool IsUnsigned { get; }
+        public string Sign { get; }
+        public string IntPart { get; }
+        public string FracPart { get; }
 
-        public string BitRep => Sign + ExpSign + Mantissa + Exponent;
-        public double Value 
-        { 
-            get 
+        public string BitRep => Sign + IntPart + FracPart;
+        public double Value
+        {
+            get
             {
-                double mantissaDec = Convert.ToInt32(Mantissa, 2);
-                mantissaDec /= Math.Pow(10, mantissaDec.ToString().Length - 1);
-                var exponentDec = Convert.ToInt32(Exponent, 2);
-                var value = mantissaDec * Math.Pow(10, ExpSign == "0" ? exponentDec : -exponentDec);
+                var decFracPart = 0d;
 
-                return Sign == "0" ? value : -value ;
-            } 
+                for (int i = 0; i < FracPart.Length; i++)
+                {
+                    decFracPart += (FracPart[i] - '0') * Math.Pow(2, -1 - i);
+                }
+
+                double value = Convert.ToInt32(IntPart, 2) + decFracPart;
+                return Sign == "0" ? value : -value;
+            }
+        }
+
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="value">Значение для конвертации</param>
+        /// <param name="intPartSize">Размер целой части</param>
+        /// <param name="fracPartSize">Размер для дробной части</param>
+        /// <param name="isUnsigned">Является ли число беззнаковым</param>
+        public Floating(double value, int intPartSize = 0, int fracPartSize = 0, bool? isUnsigned = null)
+        {
+            IntPartSize = intPartSize == 0 ? FloatingSettings.IntPartSize : intPartSize;
+            FracPartSize = fracPartSize == 0 ? FloatingSettings.FracPartSize : fracPartSize;
+            IsUnsigned = isUnsigned ?? FloatingSettings.IsUnsigned;
+
+            var bitRep = BinaryConverter.DoubleToBinaryRow(value, IntPartSize, FracPartSize);
+
+            Sign = IsUnsigned ? "0" : bitRep[0].ToString();
+            IntPart = bitRep.Substring(1, IntPartSize);
+            FracPart = bitRep.Substring(IntPartSize + 1);
+
+        }
+
+        public static implicit operator Floating(double value)
+        {
+            return new Floating(value);
         }
     }
 
-
-    public struct Fraction
-    {
-        public string Sign { get; set; }
-        public string IntPart { get; set; }
-        public string FracPart { get; set; }
-    }
-
+    /// <summary>
+    /// Класс с набором методов для преобразования десятичного числа в двоичную структуру и обратно
+    /// </summary>
     public static class BinaryConverter
     {
-        public const int MantissaSize = 16;
-        public const int ExponentSize = 4;
-        public const int DecFracSize = 3;
-
         /// <summary>
-        /// Конвертирует значение типа decimal в структуру числа с плавающей точкой
+        /// Перевод десятичного числа в двоичную структуру с фиксированной точкой 
         /// </summary>
-        /// <param name="value">Конвертируемое значение</param>
-        /// <returns>Структура числа с плавающей точкой</returns>
-        public static Floating DecimalToBinaryFloating(double value)
+        /// <param name="value">Значение для конвертации</param>
+        /// <param name="intPartSize">Размер целой части</param>
+        /// <param name="fracPartSize">Размер для дробной части</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string DoubleToBinaryRow(double value, int intPartSize = 0, int fracPartSize = 0)
         {
-            int sign = value > 0 ? 0 : 1;
-            double mantissa = value = Math.Abs(value);
-            int exponent = 0;
-
-            //Значение должно быть конечно
             if (!double.IsFinite(value))
             {
                 throw new ArgumentException();
             }
 
-            if(value == 0)
-            {
-                return new Floating
-                {
-                    Mantissa = "0".PadLeft(MantissaSize, '0'),
-                    Exponent = "0".PadLeft(ExponentSize, '0'),
-                    Sign = "0",
-                    ExpSign = "0"
-                };
-            }
+            intPartSize = intPartSize == 0 ? FloatingSettings.IntPartSize : intPartSize;
+            fracPartSize = fracPartSize == 0 ? FloatingSettings.FracPartSize : fracPartSize;
 
-            //Формирование мантиссы и экспоненты
-            //Ветвление влияет на знак экспоненты
-            if (value >= 1)
-            {
-                while(true)
-                {
-                    value /= 10;
-                    if (value < 1)
-                        break;
-                    mantissa = value;
-                    exponent++;
-                }
-            }
-            else
-            {
-                while (true)
-                {
-                    value *= 10;
-                    if (value > 10)
-                        break;
-                    mantissa = value;
-                    exponent--;
-                }
-            }
+            var sign = value > 0 ? "0" : "1";
 
-            mantissa = Math.Round(mantissa, DecFracSize);
-
-            var mantStr = mantissa.ToString().Replace(",","");
-            mantStr = Convert.ToString(Convert.ToInt32(mantStr), 2);
-            mantStr = mantStr.PadLeft(MantissaSize, '0').Substring(0,MantissaSize);
-
-            var expStr = Convert.ToString(Math.Abs(exponent), 2);
-            expStr = expStr.PadLeft(ExponentSize, '0').Substring(0,ExponentSize);
-
-            return new Floating
-            {
-                Sign = sign.ToString(),
-                Mantissa = mantStr,
-                Exponent = expStr,
-                ExpSign = exponent >= 0 ? "0" : "1"
-            };
-        }
-
-
-        /// <summary>
-        /// Преобразует десятичное значение в структуру дробного числа с определенной точностью
-        /// </summary>
-        /// <param name="value">Конвертируемое значение</param>
-        /// <param name="acc">Точность</param>
-        /// <returns>Структура дробного числа</returns>
-        public static Fraction DecimalToBinaryFraction(double value, int acc)
-        {
             var intPart = (int)Math.Truncate(value);
             var fracPart = value - intPart;
 
-            intPart = Math.Abs(intPart);
-            fracPart = Math.Abs(fracPart);
+            var intPartStr = Convert.ToString(intPart, 2);
+            var fracPartStr = GetFracPart(fracPart, fracPartSize);
 
-            int fracInt;
-            StringBuilder binaryFracPart = new StringBuilder();
+            intPartStr = TransformPart(intPartStr , intPartSize);
+            fracPartStr = TransformPart(fracPartStr, fracPartSize, true);
 
-
-            for (int i = 0; i < acc; i++)
+            string TransformPart(string part, int size, bool padRight = false)
             {
-                fracPart *= 2;
-                fracInt = (int)fracPart;
-
-                if (fracInt == 1)
+                if (part.Length > size)
                 {
-                    fracPart -= fracInt;
-                    binaryFracPart.Append('1');
+                    part = padRight ? part.Substring(0, size) : part.Substring(part.Length - size, size);
                 }
                 else
                 {
-                    binaryFracPart.Append('0');
+                    part = padRight ? part.PadRight(size, '0') : part.PadLeft(size, '0');
                 }
+
+                return part;
             }
 
-            return new Fraction
+            string GetFracPart(double value, int size)
             {
-                Sign = Math.Sign(value) == -1 ? "1" : "0",
-                IntPart = Convert.ToString(intPart, 2),
-                FracPart = binaryFracPart.ToString()
-            };
+                var sb = new StringBuilder(size);
+                value = Math.Abs(value);
+
+                for (int i = 0; i < size; i++)
+                {
+                    value *= 2;
+                    var intPart = (int)Math.Truncate(value);
+                    sb.Append(intPart.ToString());
+                    value -= intPart;
+
+                    if (value == 0)
+                        break;
+                }
+
+                return sb.ToString();
+            }
+
+            return sign + intPartStr + fracPartStr;
         }
 
         /// <summary>
-        /// Преобразует битовую строку в значение типа double
+        /// Перевод битовой строки в десятичное число
         /// </summary>
-        /// <param name="bits">Битовая строка</param>
-        /// <returns>Значение типа double</returns>
-        public static double RawBinaryToDouble(string bits)
+        /// <param name="bitRep">Битовая строка</param>
+        /// <param name="intPartSize">Размер целой части</param>
+        /// <returns></returns>
+        public static double BinaryRowToDouble(string bitRep, int intPartSize = 0)
         {
-            var value = new Floating
-            {
-                Sign = $"{bits[0]}",
-                ExpSign = $"{bits[1]}",
-                Mantissa = bits.Substring(2, MantissaSize),
-                Exponent = bits.Substring(MantissaSize + 2, ExponentSize)
-            };
+            var decFracPart = 0d;
 
-            if(double.IsInfinity(value.Value))
+            intPartSize = intPartSize == 0 ? FloatingSettings.IntPartSize : intPartSize;
+
+            var intPart = bitRep.Substring(1, intPartSize);
+            var fracPart = bitRep.Substring(intPartSize + 1);
+
+            for (int i = 0; i < fracPart.Length; i++)
             {
-                Console.Write("");
+                decFracPart += (fracPart[i] - '0') * Math.Pow(2, -1 - i);
             }
 
-            return value.Value;
-        }
-
-        /// <summary>
-        /// Преобразует структуру дробного числа в значение типа double
-        /// </summary>
-        /// <param name="value">Структура дробного числа</param>
-        /// <returns>Значение типа double</returns>
-        public static double BinaryToDouble(Fraction value)
-        {
-            double intPart = 0;
-            double fracPart = 0;
-
-            int twos = 1;
-
-            for (int i = value.IntPart.Length - 1; i >= 0; i--)
-            {
-                intPart += Char.GetNumericValue(value.IntPart[i]) * twos;
-                twos *= 2;
-            }
-
-            twos = 2;
-
-            for (int i = 0; i < value.FracPart.Length; i++)
-            {
-                fracPart += Char.GetNumericValue(value.FracPart[i]) / twos;
-                twos *= 2;
-            }
-
-            var converted = intPart + fracPart;
-
-            converted *= value.Sign == "1" ? -1d : 1d;
-
-            return converted;
+            double value = Convert.ToInt32(intPart, 2) + decFracPart;
+            return bitRep[0] == '0' ? value : -value;
         }
     }
+
 }
