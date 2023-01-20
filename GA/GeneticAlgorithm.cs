@@ -15,6 +15,7 @@ namespace GA
             BestResultDelta
         };
 
+        private readonly Logger _logger;
         private readonly Random _random = new Random();
         private Population _population;
         private readonly Func<Floating[], double> _fitness;
@@ -24,12 +25,13 @@ namespace GA
         public double BestFit => Best.Score(_fitness);
         public Individual Best { get; private set; }
 
-        public GeneticAlgorithm(Func<Floating[], double> fitnessFunction, double crossProb, double mutProb)
+        public GeneticAlgorithm(Func<Floating[], double> fitnessFunction, double crossProb, double mutProb, Logger logger)
         {
             _population = PopulationFabric.Create(100, new[] {-1.3d, 1.3d, 1.3d, 1.3d, 1.3d, 1.3d, 1.3d });
             _fitness = fitnessFunction;
             _crossoverProbability = crossProb;
             _mutationProbability = mutProb;
+            _logger = logger;
         }
 
         /// <summary>
@@ -71,9 +73,23 @@ namespace GA
                 }
 
                 this._population.UpdatePopulation(newPop);
+                _logger.Log(GetGenerationLogMessage(generation, best));
             }
 
             Best = best;
+        }
+
+        /// <summary>
+        /// Формирование лога с информацией о поколении
+        /// </summary>
+        /// <param name="generation">Номер поколения</param>
+        /// <param name="best">Лучшая особь</param>
+        /// <returns></returns>
+        private string GetGenerationLogMessage(int generation, Individual best)
+        {
+            var individualInfo = string.Join("\r\n", best.Values.Select((x, i) => $"{(ValueTag)i} = {x.Value:0.0#####}"));
+
+            return $"\r\nПоколение {generation + 1} | Ошибка = {best.Score(_fitness)}\r\n{individualInfo}\r\n";
         }
 
         /// <summary>

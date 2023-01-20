@@ -6,19 +6,33 @@ using System.Linq;
 
 namespace GA
 {
+    /// <summary>
+    /// Теги для значений функции
+    /// </summary>
+    public enum ValueTag
+    {
+        p0,
+        l,
+        b,
+        x0,
+        y0,
+        m,
+        n
+    }
+
     public static class Program
     {
+        private const string DefaultCfgFilePath = "path.cfg";
+
+        private const string DefaultInputPath = ".\\IO\\input.json";
+        private const string DefaultOutputPath = ".\\IO\\output.json";
+
+        private const string DefaultIOLoggerPath = ".\\log\\io.log";
+        private const string DefaultAlgoLoggerPath = ".\\log\\algorithm.log";
+
+        private static Logger _ioLogger;
+
         private static InputData _inputData;
-        private static Dictionary<int, string> _tags = new Dictionary<int, string>() // Набор тегов для значений функции
-        {
-            { 0, "p0" },
-            { 1, "l" },
-            { 2, "b" },
-            { 3, "x0" },
-            { 4, "y0" },
-            { 5, "m" },
-            { 6, "n" },
-        };
 
         /// <summary>
         /// Точка входа программы
@@ -26,54 +40,105 @@ namespace GA
         /// <param name="args">Массив, где первый элемент - путь к файлу с входными данными</param>
         static void Main(string[] args)
         {
+            _ioLogger = new Logger(DefaultIOLoggerPath);
+            var generationsLogger = new Logger(DefaultAlgoLoggerPath, false);
+
             FloatingSettings.IntPartSize = 3;
             FloatingSettings.FracPartSize = 10;
             FloatingSettings.IsUnsigned = true;
 
-            if (args.Length == 0)
+            var filePath = GetInputFilePath();
+            _inputData = GetInputData(filePath);
+
+            if(_inputData == null)
                 return;
-
-            //var filePath = @"H:\Projects\VS\GA\GA\input.json"; // для отладки
-
-            var inputJson = File.ReadAllText(args[0]); // считывание входных данных
-            _inputData = JsonConvert.DeserializeObject<InputData>(inputJson); // десериализация входных данных
 
             GeneticAlgorithm algo;
 
-            algo = new GeneticAlgorithm(Function, 0.2, 0.01);
+            algo = new GeneticAlgorithm(Function, 0.2, 0.01, generationsLogger);
             algo.Run(100);
 
+            WriteOutputData(algo);
+
+            _ioLogger.Log($"Готово! Результат находится в {DefaultOutputPath}");
+            Console.ReadLine();
+        }
+
+        /// <summary>
+        /// Получение входных данных
+        /// </summary>
+        /// <param name="filePath">Путь к файлу с входными данными</param>
+        static InputData GetInputData(string filePath)
+        {
+            string inputJson;
+
+            try
+            {
+                _ioLogger.Log($"Взятие исходных данных из {filePath}"); 
+                inputJson = File.ReadAllText(filePath);
+                return JsonConvert.DeserializeObject<InputData>(inputJson); // десериализация входных данных
+            }
+            catch
+            {
+                _ioLogger.Log($"Не удалось прочитать исходные данные из {filePath}!");
+
+                if(DefaultInputPath != filePath)
+                    return GetInputData(DefaultInputPath);
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Получение пути к файлу с входными данными
+        /// </summary>
+        /// <returns></returns>
+        static string GetInputFilePath()
+        {
+            try
+            {
+                return File.ReadAllText(DefaultCfgFilePath);
+            }
+            catch
+            {
+                _ioLogger.Log("path.cfg не найден!");
+                return DefaultInputPath;
+            }
+        }
+
+        /// <summary>
+        /// Запись результатов
+        /// </summary>
+        static void WriteOutputData(GeneticAlgorithm algo)
+        {
             var output = new OutputData
             {
                 FunctionValue = algo.BestFit,
                 Values = algo.Best.Values.Select((x, i) => new ValueWithTag
                 {
                     Value = x.Value,
-                    Tag = _tags[i]
+                    Tag = ((ValueTag)i).ToString()
                 })
             };
 
             // сериализация и запись выходных данных
-            using (var sw = new StreamWriter(@"output.json"))
+            using (var sw = new StreamWriter(DefaultOutputPath))
             {
                 sw.Write(JsonConvert.SerializeObject(output, Formatting.Indented));
             }
-
-            Console.WriteLine("Готово! Результат находится в output.json");
-            Console.ReadLine();
         }
 
         static double Function(Floating[] fs)
         {
             var xs = fs.Select(f => f.Value).ToArray();
 
-            var p0 = xs[0];
-            var l = xs[1];
-            var b = xs[2];
-            var x0 = xs[3];
-            var y0 = xs[4];
-            var m = xs[5];
-            var n = xs[6];
+            var p0 = xs[(int)ValueTag.p0];
+            var l = xs[(int)ValueTag.l];
+            var b = xs[(int)ValueTag.b];
+            var x0 = xs[(int)ValueTag.x0];
+            var y0 = xs[(int)ValueTag.y0];
+            var m = xs[(int)ValueTag.m];
+            var n = xs[(int)ValueTag.n];
 
             return Enumerable.Range(0, _inputData.E.Length)
                 .Select(i =>
