@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -22,13 +23,17 @@ namespace GA
 
     public static class Program
     {
+        private const string DefaultGAConfigFilePath = "ga_cfg.json";
+
         private const string DefaultCfgFilePath = "path.cfg";
 
         private const string DefaultInputPath = ".\\IO\\input.json";
-        private const string DefaultOutputPath = ".\\IO\\output.json";
+        private const string DefaultOutputPath = ".\\IO\\plot_input.json";
 
         private const string DefaultIOLoggerPath = ".\\log\\io.log";
         private const string DefaultAlgoLoggerPath = ".\\log\\algorithm.log";
+
+        private const string DefaultPlotExePath = "OpenTK__Plotter.exe";
 
         private static Logger _ioLogger;
 
@@ -53,15 +58,33 @@ namespace GA
             if(_inputData == null)
                 return;
 
+            var gaConfig = GetGAConfig();
+
+            if (gaConfig == null)
+                return;
+
             GeneticAlgorithm algo;
 
-            algo = new GeneticAlgorithm(Function, 0.2, 0.01, generationsLogger);
-            algo.Run(100);
+            algo = new GeneticAlgorithm(Function, gaConfig.CrossoverProbability, gaConfig.MutationProbability, generationsLogger);
+            algo.Run(gaConfig.Generations);
 
             WriteOutputData(algo);
 
             _ioLogger.Log($"Готово! Результат находится в {DefaultOutputPath}");
-            Console.ReadLine();
+
+            OpenPlotter();
+        }
+
+        static void OpenPlotter()
+        {
+            try
+            {
+                Process.Start(DefaultPlotExePath);
+            }
+            catch
+            {
+                _ioLogger.Log($"Не найден визуализатор по пути {DefaultPlotExePath}");
+            }
         }
 
         /// <summary>
@@ -71,22 +94,46 @@ namespace GA
         static InputData GetInputData(string filePath)
         {
             string inputJson;
+            InputData inputData = null;
 
             try
             {
                 _ioLogger.Log($"Взятие исходных данных из {filePath}"); 
                 inputJson = File.ReadAllText(filePath);
-                return JsonConvert.DeserializeObject<InputData>(inputJson); // десериализация входных данных
+                inputData = JsonConvert.DeserializeObject<InputData>(inputJson); // десериализация входных данных
             }
             catch
             {
+            }
+
+            if (inputData?.E == null || inputData?.Phi == null)
+            {
                 _ioLogger.Log($"Не удалось прочитать исходные данные из {filePath}!");
 
-                if(DefaultInputPath != filePath)
-                    return GetInputData(DefaultInputPath);
-
-                return null;
+                if (DefaultInputPath != filePath)
+                    inputData = GetInputData(DefaultInputPath);
             }
+
+            return inputData;
+        }
+
+        static GAConfig GetGAConfig()
+        {
+            string configJson;
+            GAConfig config = null;
+
+            try
+            {
+                _ioLogger.Log($"Взятие настроек из {DefaultGAConfigFilePath}");
+                configJson = File.ReadAllText(DefaultGAConfigFilePath);
+                config = JsonConvert.DeserializeObject<GAConfig>(configJson);
+            }
+            catch
+            {
+                _ioLogger.Log($"Не удалось взять настройки из {DefaultGAConfigFilePath}");
+            }
+
+            return config;
         }
 
         /// <summary>
