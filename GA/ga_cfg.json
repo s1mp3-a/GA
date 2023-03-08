@@ -1,0 +1,5 @@
+{
+  "crossoverProbability": 0.2,
+  "mutationProbability": 0.01,
+  "generations": 100
+}
